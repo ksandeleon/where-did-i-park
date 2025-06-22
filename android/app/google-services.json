@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "621378826404",
+    "project_id": "go-parking-72c6c",
+    "storage_bucket": "go-parking-72c6c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:621378826404:android:e8bb2f5c770e3f2cca3631",
+        "android_client_info": {
+          "package_name": "com.example.where_did_i_park"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZMpR6B_y6SR7Y2FxIuehnElB04I9uzi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
