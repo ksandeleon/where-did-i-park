@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
+import 'package:where_did_i_park/save-park/services/camera_service.dart';
 import 'package:where_did_i_park/save-park/services/location_service.dart';
 
 class ParkingForm extends StatefulWidget {
@@ -15,6 +16,29 @@ class _ParkingFormState extends State<ParkingForm> {
   final LatLng _center = const LatLng(14.6507, 121.1029);
 
   final locationService = LocationService();
+  final _cameraService = CameraService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLostData();
+  }
+
+  void _takePicture() async {
+    final image = await _cameraService.takePhoto();
+    if (image != null) {
+      print('Photo taken: ${image.path}');
+      // Upload to Firebase or display in the app
+    }
+  }
+
+  void _checkLostData() async {
+    final lostImage = await _cameraService.handleLostData();
+    if (lostImage != null) {
+      print('Recovered lost photo: ${lostImage.path}');
+      // Recover in UI
+    }
+  }
 
   void _getLocation() async {
     try {
@@ -128,7 +152,7 @@ class _ParkingFormState extends State<ParkingForm> {
                     // Take Photo
                     ElevatedButton(
                       onPressed: () {
-                        // TODO: Handle photo logic
+                        _takePicture();
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
