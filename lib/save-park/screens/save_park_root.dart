@@ -20,7 +20,7 @@ class _SaveParkRootState extends State<SaveParkRoot> {
         backgroundColor: Colors.grey[100],
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           "Marikina",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
@@ -70,17 +70,19 @@ class _SaveParkRootState extends State<SaveParkRoot> {
                 SizedBox(height: 30),
                 NavToHistory(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ParkingForm()),
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(builder: (context) => ParkingForm()),
+                    // );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('NavToHistory tapped')),
                     );
                   },
                 ),
-                SizedBox(height: 65),
+                SizedBox(height: 35),
                 Text(
                   "Go Parking App",
                   style: TextStyle(
-                    fontFamily: 'Roboto',
                     fontSize: 24,
                     color: Colors.black45,
                     fontWeight: FontWeight.w900,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
+import 'package:where_did_i_park/save-park/services/location_service.dart';
 
 class ParkingForm extends StatefulWidget {
   const ParkingForm({super.key});
@@ -8,125 +11,195 @@ class ParkingForm extends StatefulWidget {
 }
 
 class _ParkingFormState extends State<ParkingForm> {
-  final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
+  late GoogleMapController mapController;
+  final LatLng _center = const LatLng(14.6507, 121.1029);
 
-  @override
-  void initState() {
-    super.initState();
+  final locationService = LocationService();
 
-    _scrollController.addListener(() {
+  void _getLocation() async {
+    try {
+      final position = await locationService.determinePosition();
+      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+    } catch (e) {
+      print('Error getting location: $e');
+    }
+  }
+
+  final TextEditingController _noteController = TextEditingController();
+  TimeOfDay? _selectedTime;
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+  }
+
+  Future<void> _pickTime() async {
+    final TimeOfDay? time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.input, // ⌨ Keyboard style
+    );
+    if (time != null) {
       setState(() {
-        _scrollOffset = _scrollController.offset;
+        _selectedTime = time;
       });
-    });
+    }
   }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  // Helper: Calculate dynamic font size based on scroll
-  double get _titleFontSize => _scrollOffset < 40 ? 18 : 26;
-
-  // Helper: Show marker only when pulled
-  bool get _showLocationRow => _scrollOffset >= 40;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        // automaticallyImplyLeading: false,
+        title: const Text(
+          "Add Parking Location",
+          style: TextStyle(fontSize: 20),
+        ),
+      ),
       body: SafeArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Custom Sliver App Bar (Not real AppBar)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+        child: Column(
+          children: [
+            // Map
+            Expanded(
+              flex: 7,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _center,
+                  zoom: 15.0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Left column (title + location)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: TextStyle(
-                            fontSize: _titleFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                          child: const Text("Marikina"),
-                        ),
-                        const SizedBox(height: 4),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child:
-                              _showLocationRow
-                                  ? Row(
-                                    key: const ValueKey('with-icon'),
-                                    children: const [
-                                      Icon(
-                                        Icons.location_on,
-                                        size: 14,
-                                        color: Colors.grey,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        "Current Location",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : Container(
-                                    key: const ValueKey('line'),
-                                    height: 2,
-                                    width: 60,
-                                    color: Colors.grey.shade300,
-                                  ),
-                        ),
-                      ],
-                    ),
-
-                    // Right side icons
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.account_circle),
-                          onPressed: () {
-                            // go to account screen
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.settings),
-                          onPressed: () {
-                            // go to settings
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                zoomControlsEnabled: false,
               ),
             ),
 
-            // Body content
-            SliverToBoxAdapter(
-              child: Padding(
+            // Bottom card
+            Expanded(
+              flex: 6,
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, -3),
+                    ),
+                  ],
+                ),
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: const [
-                    SizedBox(height: 300),
-                    Text("Scroll to see header behavior"),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: 8),
+                    // Write Note (single line)
+                    TextFormField(
+                      controller: _noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Write Note',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Add Timer
+                    ElevatedButton(
+                      onPressed: _pickTime,
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        backgroundColor: Colors.grey[300],
+                      ),
+                      child: Text(
+                        _selectedTime == null
+                            ? 'Add Timer (Optional)'
+                            : 'Timer: ${_selectedTime!.format(context)}',
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Take Photo
+                    ElevatedButton(
+                      onPressed: () {
+                        // TODO: Handle photo logic
+                      },
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        backgroundColor: Colors.grey[300],
+                      ),
+                      child: const Text(
+                        "Take Photo",
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+
+                    FetchCurrentLocation(
+                      onTap: () {
+                        // Handle settings navigation here
+                        _getLocation();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('account tapped')),
+                        );
+                      },
+                    ),
+
+                    const Spacer(),
+
+                    // Save and Discard buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Discard
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // TODO: Discard logic
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Save
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // TODO: Save logic
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.teal),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              "Save",
+                              style: TextStyle(color: Colors.teal),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
