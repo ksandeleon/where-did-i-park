@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:where_did_i_park/save-park/screens/save_park_root.dart';
 
 class HomeRoot extends StatefulWidget {
   const HomeRoot({super.key});
@@ -8,41 +9,35 @@ class HomeRoot extends StatefulWidget {
 }
 
 class _HomeRootState extends State<HomeRoot> {
+  int _currentIndex = 0;
 
+  final List<Widget> _screens = [
+    const SaveParkRoot(),    // Feature: Parking
+    const SaveParkRoot(),  // Feature: Settings
+    const SaveParkRoot(),   // Feature: Profile or Account
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        elevation: 50,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          //is it also possible to make an animation here, when the users pulls down the screen, the text will stretch
-          "Change this to users location and add some animations",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-            ),
-        ),
-        actions: [
-          //add a add icon addable button here
-          //add head icon here representing user actions 
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                //implement body
-
-
-              ],
-            ),
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_parking),
+            label: 'Parking',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

@@ -7,7 +7,7 @@ class AddParkingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(30),
@@ -31,7 +31,7 @@ class AddParkingCard extends StatelessWidget {
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 40),
+            SizedBox(height: 80),
           ],
         ),
       ),
