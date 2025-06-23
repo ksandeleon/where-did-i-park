@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
@@ -14,6 +16,10 @@ class ParkingForm extends StatefulWidget {
 class _ParkingFormState extends State<ParkingForm> {
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(14.6507, 121.1029);
+  final TextEditingController _noteController = TextEditingController();
+  TimeOfDay? _selectedTime;
+  File? _imageFile;
+  Set<Marker> _markers = {};
 
   final locationService = LocationService();
   final _cameraService = CameraService();
@@ -27,8 +33,28 @@ class _ParkingFormState extends State<ParkingForm> {
   void _takePicture() async {
     final image = await _cameraService.takePhoto();
     if (image != null) {
-      print('Photo taken: ${image.path}');
-      // Upload to Firebase or display in the app
+      setState(() {
+        _imageFile = image;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Center(
+            child: const Text(
+              'Parking photo saved successfully!',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+          backgroundColor: Colors.black45,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.only(bottom: 14, top: 14),
+          duration: const Duration(seconds: 6),
+        ),
+      );
     }
   }
 
@@ -40,17 +66,46 @@ class _ParkingFormState extends State<ParkingForm> {
     }
   }
 
+  void _handleMapTap(LatLng tappedPoint) {
+    setState(() {
+      _markers = {
+        Marker(
+          markerId: MarkerId("selected_parking_spot"),
+          position: tappedPoint,
+          infoWindow: InfoWindow(title: "Selected Location"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
+        ),
+      };
+    });
+  }
+
   void _getLocation() async {
     try {
       final position = await locationService.determinePosition();
-      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+
+      LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _markers = {
+          Marker(
+            markerId: MarkerId("current_location"),
+            position: currentLatLng,
+            infoWindow: InfoWindow(title: "You are here"),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueBlue,
+            ),
+          ),
+        };
+      });
+
+      // Move the camera to the new marker
+      mapController.animateCamera(CameraUpdate.newLatLng(currentLatLng));
     } catch (e) {
       print('Error getting location: $e');
     }
   }
-
-  final TextEditingController _noteController = TextEditingController();
-  TimeOfDay? _selectedTime;
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -95,6 +150,8 @@ class _ParkingFormState extends State<ParkingForm> {
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 zoomControlsEnabled: false,
+                onTap: _handleMapTap,
+                markers: _markers,
               ),
             ),
 
@@ -137,13 +194,16 @@ class _ParkingFormState extends State<ParkingForm> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.grey[200],
                       ),
                       child: Text(
                         _selectedTime == null
                             ? 'Add Timer (Optional)'
                             : 'Timer: ${_selectedTime!.format(context)}',
-                        style: const TextStyle(color: Colors.black),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
 
@@ -151,29 +211,28 @@ class _ParkingFormState extends State<ParkingForm> {
 
                     // Take Photo
                     ElevatedButton(
-                      onPressed: () {
-                        _takePicture();
-                      },
+                      onPressed: _takePicture,
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.grey[200],
                       ),
-                      child: const Text(
-                        "Take Photo",
-                        style: TextStyle(color: Colors.black),
+                      child: Text(
+                        _imageFile == null ? "Take Photo" : "Take A New Photo",
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
+
                     SizedBox(height: 4),
 
                     FetchCurrentLocation(
                       onTap: () {
                         // Handle settings navigation here
                         _getLocation();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('account tapped')),
-                        );
                       },
                     ),
 
@@ -187,7 +246,7 @@ class _ParkingFormState extends State<ParkingForm> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              // TODO: Discard logic
+                              Navigator.pop(context);
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Colors.red),
