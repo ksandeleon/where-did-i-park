@@ -1,10 +1,11 @@
-// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-// import 'package:where_did_i_park/firebase_options.dart';
+import 'package:where_did_i_park/firebase_options.dart';
 import 'package:where_did_i_park/home/screens/home_root.dart';
 
 void main() async {
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(const MyApp());

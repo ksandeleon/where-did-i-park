@@ -1,7 +1,8 @@
 import 'dart:io';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:where_did_i_park/save-park/components/custom_snackbar.dart';
 import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
 import 'package:where_did_i_park/save-park/services/camera_service.dart';
 import 'package:where_did_i_park/save-park/services/location_service.dart';
@@ -28,6 +29,25 @@ class _ParkingFormState extends State<ParkingForm> {
   void initState() {
     super.initState();
     _checkLostData();
+  }
+
+  void showCustomSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Center(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+          ),
+        ),
+        backgroundColor: Colors.black45,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.only(bottom: 14, top: 14),
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   void _takePicture() async {
@@ -121,6 +141,44 @@ class _ParkingFormState extends State<ParkingForm> {
       setState(() {
         _selectedTime = time;
       });
+    }
+  }
+
+  Future<void> _saveParkingSpot() async {
+    if (_markers.isEmpty) {
+      showCustomSnackbar(context, "Please select a location on the map");
+      return;
+    }
+
+    final note = _noteController.text.trim();
+    final timestamp = Timestamp.now();
+    final imagePath = _imageFile?.path;
+    final selectedTime = _selectedTime?.format(context);
+
+    final selectedMarker = _markers.first;
+    final location = GeoPoint(
+      selectedMarker.position.latitude,
+      selectedMarker.position.longitude,
+    );
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('GoParking')
+          .doc('ParkingSpot')
+          .set({
+            'note': note,
+            'timestamp': timestamp,
+            'timer': selectedTime,
+            'imagePath': imagePath,
+            'location': location,
+          });
+
+      showCustomSnackbar(context, "Parking Spot Saved Succesfully!");
+
+      Navigator.pop(context); // close the form
+    } catch (e) {
+      print('Error saving to Firestore: $e');
+      showCustomSnackbar(context, "App Error: Parking Spot Failed To Save");
     }
   }
 
@@ -266,7 +324,7 @@ class _ParkingFormState extends State<ParkingForm> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              // TODO: Save logic
+                              _saveParkingSpot();
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Colors.teal),
