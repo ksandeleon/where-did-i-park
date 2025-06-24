@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
 import 'package:where_did_i_park/save-park/services/camera_service.dart';
 import 'package:where_did_i_park/save-park/services/location_service.dart';
+import 'package:where_did_i_park/save-park/services/user_service.dart';
 
 class ParkingForm extends StatefulWidget {
   const ParkingForm({super.key});
@@ -160,6 +161,8 @@ class _ParkingFormState extends State<ParkingForm> {
       selectedMarker.position.longitude,
     );
 
+    final userId = await getOrCreateUserId();
+
     try {
       await FirebaseFirestore.instance.collection('GoParking').add({
         'note': note,
@@ -167,6 +170,7 @@ class _ParkingFormState extends State<ParkingForm> {
         'timer': selectedTime,
         'imagePath': imagePath,
         'location': location,
+        'userId': userId,
       });
 
       showCustomSnackbar(context, "Parking Spot Saved Succesfully!");

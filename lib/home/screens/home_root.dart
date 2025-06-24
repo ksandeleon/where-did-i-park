@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:where_did_i_park/park-history/screens/history_screen.dart';
 import 'package:where_did_i_park/save-park/screens/save_park_root.dart';
 
 class HomeRoot extends StatefulWidget {
@@ -13,7 +14,7 @@ class _HomeRootState extends State<HomeRoot> {
 
   final List<Widget> _screens = [
     const SaveParkRoot(),
-    const SaveParkRoot(),
+    const HistoryScreen(),
     const SaveParkRoot(),
   ];
 
@@ -29,7 +30,7 @@ class _HomeRootState extends State<HomeRoot> {
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(top: 8,bottom: 24),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
         decoration: const BoxDecoration(
           color: Colors.white,
           boxShadow: [
