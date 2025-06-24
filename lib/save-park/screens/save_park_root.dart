@@ -1,18 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:where_did_i_park/save-park/components/add_parking.dart';
 import 'package:where_did_i_park/save-park/components/nav_to_history.dart';
 import 'package:where_did_i_park/save-park/components/parking_carousel.dart';
 import 'package:where_did_i_park/save-park/screens/parking_form.dart';
+import 'package:where_did_i_park/save-park/services/location_service.dart';
 
 class SaveParkRoot extends StatefulWidget {
-  const SaveParkRoot({super.key});
+  final void Function(Map<String, dynamic>)? onNavigateToLocate;
+
+  const SaveParkRoot({super.key, this.onNavigateToLocate});
 
   @override
   State<SaveParkRoot> createState() => _SaveParkRootState();
 }
 
 class _SaveParkRootState extends State<SaveParkRoot> {
+  LatLng _currentPosition = const LatLng(14.5736108, 121.0329706);
+  String _cityName = 'GPS Off';
+
+  @override
+  void initState() {
+    super.initState();
+    _getLocationAndCity();
+  }
+
   void showCustomSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -30,6 +43,29 @@ class _SaveParkRootState extends State<SaveParkRoot> {
         duration: const Duration(seconds: 6),
       ),
     );
+  }
+
+  // In your widget's state
+  Future<void> _getLocationAndCity() async {
+    LocationData locationData = await LocationService().determinePosition1();
+
+    if (locationData.hasError) {
+      print('Error: ${locationData.error}');
+      setState(() {
+        _cityName = 'GPS Off';
+      });
+      return;
+    }
+
+    if (locationData.hasLocation) {
+      setState(() {
+        _currentPosition = LatLng(
+          locationData.position!.latitude,
+          locationData.position!.longitude,
+        );
+        _cityName = locationData.cityName ?? 'GPS Off';
+      });
+    }
   }
 
   @override
@@ -96,12 +132,11 @@ class _SaveParkRootState extends State<SaveParkRoot> {
                         showCustomSnackbar(context, "You have no parking yet");
                       } else {
                         final parkingData = querySnapshot.docs.first.data();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ParkingForm(),
-                          ),
-                        );
+
+                        // Use the callback instead of Navigator.push
+                        if (widget.onNavigateToLocate != null) {
+                          widget.onNavigateToLocate!(parkingData);
+                        }
                       }
                     } catch (e) {
                       print("Error fetching parking history: $e");
