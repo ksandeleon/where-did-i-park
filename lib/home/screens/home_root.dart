@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:where_did_i_park/find-my-car/screens/locate_parking_root.dart';
 import 'package:where_did_i_park/park-history/screens/history_screen.dart';
 import 'package:where_did_i_park/save-park/screens/save_park_root.dart';
 
@@ -14,15 +15,15 @@ class _HomeRootState extends State<HomeRoot> {
 
   final List<Widget> _screens = [
     const SaveParkRoot(),
+    const LocateParkingRoot(),
     const HistoryScreen(),
-    const SaveParkRoot(),
   ];
 
-  final List<String> _labels = ['Parking', 'History', 'Locate'];
+  final List<String> _labels = ['Parking', 'Locate', 'History'];
   final List<IconData> _icons = [
     Icons.local_parking_outlined,
+    Icons.location_searching_outlined,
     Icons.history_outlined,
-    Icons.location_searching_outlined, // good for Locate
   ];
 
   @override

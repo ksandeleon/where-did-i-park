@@ -1,4 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:where_did_i_park/save-park/models/parking_spot_model.dart';
+import 'package:where_did_i_park/save-park/services/user_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -8,6 +13,30 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  late Future<List<ParkingSpotModel>> futureParkings;
+  final GlobalKey _allParkingKey = GlobalKey();
+
+  Future<List<ParkingSpotModel>> fetchUserParkings() async {
+    final userId = await getOrCreateUserId();
+
+    final querySnapshot =
+        await FirebaseFirestore.instance
+            .collection('GoParking')
+            .where('userId', isEqualTo: userId)
+            .orderBy('timestamp', descending: true)
+            .get();
+
+    return querySnapshot.docs
+        .map((doc) => ParkingSpotModel.fromMap(doc.data()))
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    futureParkings = fetchUserParkings();
+  }
+
   void showCustomSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -22,9 +51,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         padding: const EdgeInsets.only(bottom: 14, top: 14),
-        duration: const Duration(seconds:1),
+        duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return now.year == date.year &&
+        now.month == date.month &&
+        now.day == date.day;
   }
 
   @override
@@ -43,6 +79,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 28),
             onPressed: () {
+              futureParkings = fetchUserParkings();
               showCustomSnackbar(context, "Refreshing History");
             },
           ),
@@ -50,98 +87,137 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
 
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Today's Parking",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    "See All",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+        child: FutureBuilder<List<ParkingSpotModel>>(
+          future: futureParkings,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              // Placeholder for today's parking list
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: 2, // replace with your actual data count
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: Icon(
-                        Icons.local_parking_rounded,
-                        color: Colors.blueAccent,
+            if (snapshot.hasError) {
+              print("Firestore Error: ${snapshot.error}");
+              return const Center(
+                child: Text('App Error: Failed to load data.'),
+              );
+            }
+
+            final allParkings = snapshot.data ?? [];
+            final todayParkings =
+                allParkings.where((p) => isToday(p.timestamp)).toList();
+
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Today's Parking",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            // Scroll to the All Parking section
+                            Scrollable.ensureVisible(
+                              _allParkingKey.currentContext!,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Text(
+                            "See All",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.teal,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    todayParkings.isEmpty
+                        ? const Text("No parking recorded today.")
+                        : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: todayParkings.length,
+                          itemBuilder: (context, index) {
+                            final p = todayParkings[index];
+                            return Card(
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.local_parking_outlined,
+                                  color: Colors.teal,
+                                ),
+                                title: Text(
+                                  "Time: ${DateFormat('HH:mm:ss').format(p.timestamp)}",
+                                ),
+                                subtitle: Text(
+                                  p.note?.trim().isEmpty ?? true
+                                      ? "No notes for this parking"
+                                      : p.note!,
+                                ),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 16,
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    const SizedBox(height: 24),
+
+                    // Add the key here
+                    Text(
+                      "All Parking",
+                      key: _allParkingKey,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      title: Text("Parking Spot #$index"),
-                      subtitle: Text("Time: 8:00 AM"),
-                      trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: allParkings.length,
+                      itemBuilder: (context, index) {
+                        final p = allParkings[index];
+                        return Card(
+                          child: ListTile(
+                            leading: const Icon(
+                              Icons.local_parking_outlined,
+                              color: Colors.black45,
+                            ),
+                            title: Text(
+                              "Date: ${p.timestamp.toLocal().toString().split(' ')[0]}",
+                            ),
+                            subtitle: Text(
+                              p.note?.trim().isEmpty ?? true
+                                  ? "No notes for this parking"
+                                  : p.note!,
+                            ),
+                            trailing: Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // All Parking Title
-              Text(
-                "All Parking",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Placeholder for all parking list
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListView.builder(
-                    itemCount: 5, // replace with your actual data count
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        leading: Icon(
-                          Icons.local_parking_rounded,
-                          color: Colors.green,
-                        ),
-                        title: Text("All Parking Spot #$index"),
-                        subtitle: Text("Date: 2025-06-24"),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 16,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

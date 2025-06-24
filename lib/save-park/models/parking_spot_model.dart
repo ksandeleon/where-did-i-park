@@ -3,20 +3,20 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ParkingSpotModel {
   final String? note;
-  final DateTime? time; // Formerly "Timer" in Firebase
-  final DateTime createdAt;
+  final String? timer;
+  final DateTime timestamp;
   final double latitude;
   final double longitude;
-  final String? photoPath;
+  final String? imagePath;
   final String? userId;
 
   ParkingSpotModel({
     this.note,
-    this.time,
-    required this.createdAt,
+    this.timer,
+    required this.timestamp,
     required this.latitude,
     required this.longitude,
-    this.photoPath,
+    this.imagePath,
     this.userId,
   });
 
@@ -25,13 +25,10 @@ class ParkingSpotModel {
   Map<String, dynamic> toMap() {
     return {
       'note': note,
-      'Timer':
-          time != null
-              ? Timestamp.fromDate(time!)
-              : null, // Match Firestore field
-      'createdAt': Timestamp.fromDate(createdAt),
+      'timer': timer,
+      'timestamp': Timestamp.fromDate(timestamp),
       'location': GeoPoint(latitude, longitude),
-      'photoPath': photoPath,
+      'imagePath': imagePath,
       'userId': userId,
     };
   }
@@ -39,13 +36,14 @@ class ParkingSpotModel {
   factory ParkingSpotModel.fromMap(Map<String, dynamic> map) {
     final GeoPoint geoPoint = map['location'];
 
+
     return ParkingSpotModel(
       note: map['note'],
-      time: map['Timer'] != null ? (map['Timer'] as Timestamp).toDate() : null,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      timer: map['timer']?.toString(),
+      timestamp: (map['timestamp'] as Timestamp).toDate(),
       latitude: geoPoint.latitude,
       longitude: geoPoint.longitude,
-      photoPath: map['photoPath'],
+      imagePath: map['imagePath'],
       userId: map['userId'],
     );
   }

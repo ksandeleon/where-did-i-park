@@ -238,7 +238,7 @@ class _ParkingFormState extends State<ParkingForm> {
                     TextFormField(
                       controller: _noteController,
                       decoration: const InputDecoration(
-                        labelText: 'Write Note',
+                        labelText: 'Write Note (Optional)',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -277,7 +277,7 @@ class _ParkingFormState extends State<ParkingForm> {
                         backgroundColor: Colors.grey[200],
                       ),
                       child: Text(
-                        _imageFile == null ? "Take Photo" : "Take A New Photo",
+                        _imageFile == null ? "Take Photo (Optional)" : "Take A New Photo",
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 15,
