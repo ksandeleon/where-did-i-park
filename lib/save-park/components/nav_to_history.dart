@@ -22,11 +22,8 @@ class NavToHistory extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10),
           ),
           child: const Text(
-            "Go to my previous parkings",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            "Go to my previous parking",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ),

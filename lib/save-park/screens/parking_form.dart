@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:where_did_i_park/save-park/components/custom_snackbar.dart';
 import 'package:where_did_i_park/save-park/components/fetch_my_current_loc.dart';
 import 'package:where_did_i_park/save-park/services/camera_service.dart';
 import 'package:where_did_i_park/save-park/services/location_service.dart';
@@ -162,16 +161,13 @@ class _ParkingFormState extends State<ParkingForm> {
     );
 
     try {
-      await FirebaseFirestore.instance
-          .collection('GoParking')
-          .doc('ParkingSpot')
-          .set({
-            'note': note,
-            'timestamp': timestamp,
-            'timer': selectedTime,
-            'imagePath': imagePath,
-            'location': location,
-          });
+      await FirebaseFirestore.instance.collection('GoParking').add({
+        'note': note,
+        'timestamp': timestamp,
+        'timer': selectedTime,
+        'imagePath': imagePath,
+        'location': location,
+      });
 
       showCustomSnackbar(context, "Parking Spot Saved Succesfully!");
 
