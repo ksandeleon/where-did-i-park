@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:where_did_i_park/find-my-car/screens/locate_parking_root.dart';
+import 'package:where_did_i_park/park-history/screens/history_screen.dart';
 import 'package:where_did_i_park/save-park/screens/save_park_root.dart';
 
 class HomeRoot extends StatefulWidget {
@@ -9,7 +10,7 @@ class HomeRoot extends StatefulWidget {
   State<HomeRoot> createState() => _HomeRootState();
 }
 
-class _HomeRootState extends State<HomeRoot> {
+class _HomeRootState extends State<HomeRoot> with TickerProviderStateMixin {
   int _currentIndex = 0;
   Map<String, dynamic>? _initialParkingData;
 
@@ -28,24 +29,51 @@ class _HomeRootState extends State<HomeRoot> {
     });
   }
 
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   List<Widget> get _screens => [
     SaveParkRoot(
-      onNavigateToLocate:
-          navigateToLocateWithData, // Pass callback to SaveParkRoot too
+      key: const ValueKey('save_park'),
+      onNavigateToLocate: navigateToLocateWithData,
     ),
     LocateParkingRoot(
+      key: ValueKey('locate_${_initialParkingData?.hashCode ?? 'default'}'),
       initialParkingData: _initialParkingData,
-      key: ValueKey(_initialParkingData), // Force rebuild when data changes
     ),
-    SaveParkRoot(
-      onNavigateToLocate: navigateToLocateWithData, // Pass callback to history
+    HistoryScreen(
+      key: const ValueKey('history'),
+      onNavigateToLocate: navigateToLocateWithData,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(
+          milliseconds: 400,
+        ), // Slightly longer for smooth swipe
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          // Always slide from right to left (forward direction only)
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0), // Always slide from right
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic, // Smooth easing curve
+              ),
+            ),
+            child: child,
+          );
+        },
+        child: _screens[_currentIndex],
+      ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.only(top: 8, bottom: 24),
         decoration: const BoxDecoration(
@@ -63,23 +91,44 @@ class _HomeRootState extends State<HomeRoot> {
           children: List.generate(_labels.length, (index) {
             final isSelected = _currentIndex == index;
             return GestureDetector(
-              onTap: () => setState(() => _currentIndex = index),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _icons[index],
-                    color: isSelected ? Colors.black87 : Colors.black45,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _labels[index],
-                    style: TextStyle(
-                      color: isSelected ? Colors.black87 : Colors.black45,
-                      fontSize: 12,
+              onTap: () => _onTabTapped(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      isSelected
+                          ? Colors.black.withOpacity(0.05)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        _icons[index],
+                        color: isSelected ? Colors.black87 : Colors.black45,
+                        size: isSelected ? 26 : 24,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        color: isSelected ? Colors.black87 : Colors.black45,
+                        fontSize: isSelected ? 13 : 12,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      child: Text(_labels[index]),
+                    ),
+                  ],
+                ),
               ),
             );
           }),

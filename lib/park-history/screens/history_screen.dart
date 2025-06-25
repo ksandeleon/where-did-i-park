@@ -6,7 +6,9 @@ import 'package:where_did_i_park/save-park/models/parking_spot_model.dart';
 import 'package:where_did_i_park/save-park/services/user_service.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  final void Function(Map<String, dynamic>)? onNavigateToLocate;
+
+  const HistoryScreen({super.key, this.onNavigateToLocate});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -56,6 +58,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // Function to handle ListTile tap - similar to NavToHistory functionality
+  void handleParkingTap(ParkingSpotModel parking) async {
+    try {
+      // Convert ParkingSpotModel to Map<String, dynamic> for navigation
+      final parkingData = parking.toMap();
+
+      // Use the callback to navigate to locate tab
+      if (widget.onNavigateToLocate != null) {
+        widget.onNavigateToLocate!(parkingData);
+        showCustomSnackbar(context, "Navigating to locate parking");
+      } else {
+        showCustomSnackbar(context, "Navigation not available");
+      }
+    } catch (e) {
+      print("Error navigating to locate: $e");
+      showCustomSnackbar(context, "Something went wrong. Try again later.");
+    }
+  }
+
   bool isToday(DateTime date) {
     final now = DateTime.now();
     return now.year == date.year &&
@@ -79,7 +100,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 28),
             onPressed: () {
-              futureParkings = fetchUserParkings();
+              setState(() {
+                futureParkings = fetchUserParkings();
+              });
               showCustomSnackbar(context, "Refreshing History");
             },
           ),
@@ -169,6 +192,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   size: 16,
                                   color: Colors.teal,
                                 ),
+                                onTap:
+                                    () => handleParkingTap(
+                                      p,
+                                    ), // Add onTap functionality
                               ),
                             );
                           },
@@ -209,6 +236,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               Icons.arrow_forward_ios_rounded,
                               size: 16,
                             ),
+                            onTap:
+                                () => handleParkingTap(
+                                  p,
+                                ), // Add onTap functionality
                           ),
                         );
                       },

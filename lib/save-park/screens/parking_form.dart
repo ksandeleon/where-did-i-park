@@ -45,7 +45,7 @@ class _ParkingFormState extends State<ParkingForm> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         padding: const EdgeInsets.only(bottom: 14, top: 14),
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -185,9 +185,10 @@ class _ParkingFormState extends State<ParkingForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Add this to handle keyboard appearance
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         elevation: 0,
-        // automaticallyImplyLeading: false,
         title: const Text(
           "Add Parking Location",
           style: TextStyle(fontSize: 20),
@@ -213,9 +214,9 @@ class _ParkingFormState extends State<ParkingForm> {
               ),
             ),
 
-            // Bottom card
+            // Bottom card - Wrap with SingleChildScrollView
             Expanded(
-              flex: 6,
+              flex: 7,
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
@@ -229,119 +230,123 @@ class _ParkingFormState extends State<ParkingForm> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: 8),
-                    // Write Note (single line)
-                    TextFormField(
-                      controller: _noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Write Note (Optional)',
-                        border: OutlineInputBorder(),
-                      ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height * 0.4,
                     ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 8),
+                          // Write Note (single line)
+                          TextFormField(
+                            controller: _noteController,
+                            decoration: const InputDecoration(
+                              labelText: 'Write Note (Optional)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
 
-                    const SizedBox(height: 4),
+                          const SizedBox(height: 4),
 
-                    // Add Timer
-                    ElevatedButton(
-                      onPressed: _pickTime,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        backgroundColor: Colors.grey[200],
-                      ),
-                      child: Text(
-                        _selectedTime == null
-                            ? 'Add Timer (Optional)'
-                            : 'Timer: ${_selectedTime!.format(context)}',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Take Photo
-                    ElevatedButton(
-                      onPressed: _takePicture,
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        backgroundColor: Colors.grey[200],
-                      ),
-                      child: Text(
-                        _imageFile == null ? "Take Photo (Optional)" : "Take A New Photo",
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 4),
-
-                    FetchCurrentLocation(
-                      onTap: () {
-                        // Handle settings navigation here
-                        _getLocation();
-                      },
-                    ),
-
-                    const Spacer(),
-
-                    // Save and Discard buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Discard
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.red),
+                          // Add Timer
+                          ElevatedButton(
+                            onPressed: _pickTime,
+                            style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              backgroundColor: Colors.white,
+                              backgroundColor: Colors.grey[200],
                             ),
-                            child: const Text(
-                              "Cancel",
-                              style: TextStyle(color: Colors.red),
+                            child: Text(
+                              _selectedTime == null
+                                  ? 'Add Timer (Optional)'
+                                  : 'Timer: ${_selectedTime!.format(context)}',
+                              style: const TextStyle(color: Colors.black),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        // Save
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              _saveParkingSpot();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.teal),
+
+                          const SizedBox(height: 4),
+
+                          // Take Photo
+                          ElevatedButton(
+                            onPressed: _takePicture,
+                            style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              backgroundColor: Colors.white,
+                              backgroundColor: Colors.grey[200],
                             ),
-                            child: const Text(
-                              "Save",
-                              style: TextStyle(color: Colors.teal),
+                            child: Text(
+                              _imageFile == null
+                                  ? "Take Photo (Optional)"
+                                  : "Take A New Photo",
+                              style: const TextStyle(color: Colors.black),
                             ),
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 4),
+
+                          FetchCurrentLocation(
+                            onTap: () {
+                              _getLocation();
+                            },
+                          ),
+
+                          const Spacer(),
+
+                          // Save and Discard buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Discard
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.red),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                  ),
+                                  child: const Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              // Save
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    _saveParkingSpot();
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.teal),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                  ),
+                                  child: const Text(
+                                    "Save",
+                                    style: TextStyle(color: Colors.teal),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

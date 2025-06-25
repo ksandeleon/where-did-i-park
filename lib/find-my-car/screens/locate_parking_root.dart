@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:where_did_i_park/save-park/models/parking_spot_model.dart';
 import 'package:where_did_i_park/save-park/services/location_service.dart';
+import 'dart:io';
 
 class LocateParkingRoot extends StatefulWidget {
   final Map<String, dynamic>? initialParkingData;
@@ -128,105 +129,205 @@ class _LocateParkingRootState extends State<LocateParkingRoot> {
       context: context,
       builder: (context) {
         return Container(
-          padding: EdgeInsets.all(16),
-          height: MediaQuery.of(context).size.height * 0.5, // Increased height
+          padding: const EdgeInsets.all(16),
+          height: MediaQuery.of(context).size.height * 0.75, // Increased height
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Draggable handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Title
               Text(
                 "Parking Details",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-              // Parking Note
-              if (parkingSpot.note != null && parkingSpot.note!.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Note:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(parkingSpot.note!),
-                    SizedBox(height: 12),
-                  ],
-                ),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Parking Note
+                      if (parkingSpot.note != null &&
+                          parkingSpot.note!.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Note:",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(parkingSpot.note!),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
 
-              // Timer
-              if (parkingSpot.timer != null)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Parking Duration:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(parkingSpot.timer!),
-                    SizedBox(height: 12),
-                  ],
-                ),
+                      // Timer
+                      if (parkingSpot.timer != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Parking Duration:",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(parkingSpot.timer!),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
 
-              // Timestamp
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Parked at:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                      // Timestamp
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Parked at:",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat(
+                              'MMM dd, yyyy - hh:mm a',
+                            ).format(parkingSpot.timestamp),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+
+                      // Coordinates
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Coordinates:",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Latitude: ${parkingSpot.latitude.toStringAsFixed(6)}",
+                          ),
+                          Text(
+                            "Longitude: ${parkingSpot.longitude.toStringAsFixed(6)}",
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+
+                      // Replace the existing image placeholder code with this:
+                      if (parkingSpot.imagePath != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Parking Photo:",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child:
+                                    parkingSpot.imagePath!.startsWith('http')
+                                        ? Image.network(
+                                          parkingSpot.imagePath!,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder: (
+                                            context,
+                                            child,
+                                            loadingProgress,
+                                          ) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value:
+                                                    loadingProgress
+                                                                .expectedTotalBytes !=
+                                                            null
+                                                        ? loadingProgress
+                                                                .cumulativeBytesLoaded /
+                                                            loadingProgress
+                                                                .expectedTotalBytes!
+                                                        : null,
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Center(
+                                              child: Icon(
+                                                Icons.error,
+                                                color: Colors.red,
+                                              ),
+                                            );
+                                          },
+                                        )
+                                        : Image.file(
+                                          File(parkingSpot.imagePath!),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Center(
+                                              child: Icon(
+                                                Icons.error,
+                                                color: Colors.red,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                    ],
                   ),
-                  Text(
-                    DateFormat(
-                      'MMM dd, yyyy - hh:mm a',
-                    ).format(parkingSpot.timestamp),
-                  ),
-                  SizedBox(height: 12),
-                ],
+                ),
               ),
 
-              // Coordinates
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Coordinates:",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text("Latitude: ${parkingSpot.latitude.toStringAsFixed(6)}"),
-                  Text(
-                    "Longitude: ${parkingSpot.longitude.toStringAsFixed(6)}",
-                  ),
-                  SizedBox(height: 12),
-                ],
-              ),
-
-              // Image placeholder (you can implement actual image display)
-              if (parkingSpot.imagePath != null)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Parking Photo:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    // You can use Image.network() here if imagePath is a URL
-                    // Or Image.file() if it's a local path
-                    Container(
-                      height: 100,
-                      color: Colors.grey[200],
-                      child: Center(child: Text("Image available")),
-                    ),
-                    SizedBox(height: 12),
-                  ],
-                ),
-
-              Spacer(),
-
-              // Close button
-              Center(
+              // Close button with better styling
+              Container(
+                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                width: double.infinity,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // More prominent color
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2, // Add some shadow
+                  ),
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Close'),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -234,7 +335,7 @@ class _LocateParkingRootState extends State<LocateParkingRoot> {
         );
       },
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
     );
@@ -249,7 +350,7 @@ class _LocateParkingRootState extends State<LocateParkingRoot> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          "Find My Car",
+          "Find My Vehicle",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         actions: [

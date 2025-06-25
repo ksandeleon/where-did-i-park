@@ -22,7 +22,7 @@ class FetchCurrentLocation extends StatelessWidget {
           ),
           child: const Text(
             "Auto Scan My Location",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle( fontWeight: FontWeight.w600),
           ),
         ),
       ),
